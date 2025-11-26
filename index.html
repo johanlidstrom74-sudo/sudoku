@@ -218,19 +218,6 @@
       font-size: 0.75rem;
       color: #6b7280;
     }
-
-    @media (max-width: 480px) {
-      #sudoku-grid {
-        grid-template-columns: repeat(9, 32px);
-        grid-template-rows: repeat(9, 32px);
-      }
-
-      #sudoku-grid input.cell {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -276,7 +263,7 @@
     </div>
 
     <p class="status" id="status"></p>
-    <div class="footer">Skapad av JL</div>
+    <div class="footer">Skapad av JL – v1.1</div>
   </div>
 
   <script>
@@ -486,20 +473,27 @@
       }
     }
 
-    // Räkna hur många av varje siffra som finns och fadas knappar vid >= 9
+    // Uppdatera keypad: fadas när alla 9 rätta rutor för en siffra är ifyllda
     function updateKeypadState() {
-      const counts = { "1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0 };
+      if (!currentSolution) return;
 
-      document.querySelectorAll("#sudoku-grid .cell").forEach(input => {
-        const v = input.value;
-        if (v && counts[v] !== undefined) {
-          counts[v]++;
+      const correctCounts = { "1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0 };
+
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          const index = r * GRID_SIZE + c;
+          const input = document.getElementById("cell-" + index);
+          const val = input.value;
+          const solVal = String(currentSolution[r][c]);
+          if (val && val === solVal) {
+            correctCounts[solVal]++;
+          }
         }
-      });
+      }
 
       document.querySelectorAll(".keypad button.num-key").forEach(btn => {
         const num = btn.dataset.num;
-        if (counts[num] >= 9) {
+        if (correctCounts[num] >= 9) {
           btn.classList.add("disabled");
         } else {
           btn.classList.remove("disabled");
@@ -565,6 +559,8 @@
           }
         }
       }
+
+      updateKeypadState();
 
       if (correct && complete) {
         statusElement.textContent = "Lösningen stämmer – bra jobbat! 🎉";
