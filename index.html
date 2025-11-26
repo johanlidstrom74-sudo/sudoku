@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -93,12 +94,34 @@
       border-right: 2px solid #111827;
     }
 
+    .difficulty {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #374151;
+    }
+
+    .difficulty span {
+      font-weight: 500;
+    }
+
+    .difficulty label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
-      margin-top: 8px;
+      margin-top: 10px;
     }
 
     .btn {
@@ -170,6 +193,22 @@
 
     <div id="sudoku-grid"></div>
 
+    <div class="difficulty">
+      <span>Svårighetsgrad:</span>
+      <label>
+        <input type="radio" name="difficulty" value="latt" />
+        Lätt
+      </label>
+      <label>
+        <input type="radio" name="difficulty" value="medel" checked />
+        Medel
+      </label>
+      <label>
+        <input type="radio" name="difficulty" value="svar" />
+        Svår
+      </label>
+    </div>
+
     <div class="controls">
       <button class="btn" id="btn-check">Kontrollera</button>
       <button class="btn secondary" id="btn-new">Ny sudoku</button>
@@ -177,7 +216,7 @@
     </div>
 
     <p class="status" id="status"></p>
-    <div class="footer">Skapad av dig 🤍 (med lite hjälp av ChatGPT)</div>
+    <div class="footer">Skapad av JL</div>
   </div>
 
   <script>
@@ -188,6 +227,19 @@
 
     let currentPuzzle = null;   // 2D-array [9][9]
     let currentSolution = null; // 2D-array [9][9]
+
+    // Svårighetsinställningar: ungefär hur många "borttagningssteg"
+    // (fler steg => fler tomma rutor => svårare)
+    const difficultySettings = {
+      latt: 18,   // mild
+      medel: 30,  // lagom
+      svar: 42    // ganska tuff
+    };
+
+    function getSelectedDifficulty() {
+      const radio = document.querySelector('input[name="difficulty"]:checked');
+      return radio ? radio.value : "medel";
+    }
 
     // ---------- Hjälpfunktioner för sudoku ----------
 
@@ -291,7 +343,7 @@
     }
 
     // Generera sudoku med unik lösning
-    function generateSudoku() {
+    function generateSudoku(maxRemovalsSteps) {
       const solution = createEmptyBoard();
       fillBoard(solution); // fyll med full lösning
 
@@ -307,7 +359,6 @@
       shuffle(cells);
 
       let removals = 0;
-      const maxRemovalsSteps = 30; // ca medel-svår nivå
 
       for (const { r, c } of cells) {
         if (puzzle[r][c] === 0) continue;
@@ -454,10 +505,15 @@
     }
 
     function generateAndLoadNewSudoku() {
-      statusElement.textContent = "Genererar sudoku...";
-      // Liten timeout för att texten ska hinna renderas om det tar en liten stund
+      const diff = getSelectedDifficulty();
+      const steps = difficultySettings[diff] ?? difficultySettings.medel;
+
+      statusElement.textContent = "Genererar sudoku (" +
+        (diff === "latt" ? "lätt" : diff === "svar" ? "svår" : "medel") +
+        ")...";
+
       setTimeout(() => {
-        const { solution, puzzle } = generateSudoku();
+        const { solution, puzzle } = generateSudoku(steps);
         currentSolution = solution;
         currentPuzzle = puzzle;
         renderPuzzle();
@@ -472,6 +528,11 @@
     document.getElementById("btn-check").addEventListener("click", checkSolution);
     document.getElementById("btn-solution").addEventListener("click", showSolution);
     document.getElementById("btn-new").addEventListener("click", generateAndLoadNewSudoku);
+
+    // Byt sudoku direkt när man ändrar svårighetsgrad
+    document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
+      radio.addEventListener("change", generateAndLoadNewSudoku);
+    });
 
     // Registrera service worker (för PWA/offline)
     if ("serviceWorker" in navigator) {
