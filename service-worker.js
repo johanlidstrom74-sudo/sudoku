@@ -1,4 +1,4 @@
-const CACHE_NAME = "sudoku-cache-v3";
+const CACHE_NAME = "sudoku-cache-v5";
 const URLS_TO_CACHE = [
   "./",
   "index.html",
