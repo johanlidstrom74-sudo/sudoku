@@ -1,27 +1,14 @@
-const CACHE_NAME = "sudoku-cache-v5";
-const URLS_TO_CACHE = [
-  "./",
-  "index.html",
-  "manifest.webmanifest"
-  // Lägg till "icons/icon-192.png", "icons/icon-512.png" om du vill cachea ikonerna också
-];
+// Minimal service worker – ingen egen caching, bara PWA-stöd
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(URLS_TO_CACHE);
-    })
-  );
+  // Aktivera nya SW direkt
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
+  // Ta kontroll över alla öppna klienter
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
+// Ingen fetch-hanterare:
+// browserns vanliga cache används, ingen extra logik som låser fast gamla versioner
