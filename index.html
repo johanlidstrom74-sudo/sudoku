@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -136,7 +135,7 @@
       color: #111827;
       font-weight: 500;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s, opacity 0.15s;
     }
 
     .keypad button.num-key {
@@ -147,12 +146,19 @@
       background: #fee2e2;
     }
 
-    .keypad button:hover {
+    .keypad button.disabled {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    .keypad button:hover:not(.disabled) {
       transform: translateY(-1px);
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     }
 
-    .keypad button:active {
+    .keypad button:active:not(.disabled) {
       transform: translateY(0);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
     }
@@ -280,9 +286,9 @@
     const statusElement = document.getElementById("status");
     const keypadElement = document.getElementById("keypad");
 
-    let currentPuzzle = null;   // 2D-array [9][9]
-    let currentSolution = null; // 2D-array [9][9]
-    let selectedIndex = null;   // 0–80, vald ruta
+    let currentPuzzle = null;
+    let currentSolution = null;
+    let selectedIndex = null;
 
     const difficultySettings = {
       latt: 18,
@@ -449,7 +455,7 @@
         input.type = "text";
         input.maxLength = 1;
         input.classList.add("cell");
-        input.readOnly = true; // viktigt: inget systemtangentbord
+        input.readOnly = true; // inget systemtangentbord
 
         const row = Math.floor(i / GRID_SIZE);
         const col = i % GRID_SIZE;
@@ -468,7 +474,6 @@
         input.addEventListener("click", () => {
           const isGiven = input.dataset.given === "true";
           if (isGiven) {
-            // kan markera eller bara ignorera; här ignorerar vi
             clearSelection();
             return;
           }
@@ -479,6 +484,27 @@
 
         gridElement.appendChild(input);
       }
+    }
+
+    // Räkna hur många av varje siffra som finns och fadas knappar vid >= 9
+    function updateKeypadState() {
+      const counts = { "1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0 };
+
+      document.querySelectorAll("#sudoku-grid .cell").forEach(input => {
+        const v = input.value;
+        if (v && counts[v] !== undefined) {
+          counts[v]++;
+        }
+      });
+
+      document.querySelectorAll(".keypad button.num-key").forEach(btn => {
+        const num = btn.dataset.num;
+        if (counts[num] >= 9) {
+          btn.classList.add("disabled");
+        } else {
+          btn.classList.remove("disabled");
+        }
+      });
     }
 
     function renderPuzzle() {
@@ -504,6 +530,8 @@
           }
         }
       }
+
+      updateKeypadState();
     }
 
     function checkSolution() {
@@ -563,6 +591,7 @@
       }
 
       clearSelection();
+      updateKeypadState();
       statusElement.textContent = "Här är lösningen.";
     }
 
@@ -596,10 +625,12 @@
       if (btn.dataset.clear === "true") {
         input.value = "";
         input.classList.remove("error");
-      } else if (btn.dataset.num) {
+      } else if (btn.dataset.num && !btn.classList.contains("disabled")) {
         input.value = btn.dataset.num;
         input.classList.remove("error");
       }
+
+      updateKeypadState();
     });
 
     // Init
